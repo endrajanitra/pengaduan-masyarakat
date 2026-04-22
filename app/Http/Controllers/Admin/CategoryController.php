@@ -26,7 +26,7 @@ class CategoryController extends Controller
     public function create(): View
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
-        return view('admin.categories.create');
+        return view('admin.categories.form');
     }
 
     /**
