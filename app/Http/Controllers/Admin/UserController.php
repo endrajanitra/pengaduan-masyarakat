@@ -44,7 +44,7 @@ class UserController extends Controller
     public function create(): View
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
-        return view('admin.users.create');
+        return view('admin.users.form');
     }
 
     /**
@@ -77,7 +77,7 @@ class UserController extends Controller
     public function edit(User $user): View
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
-        return view('admin.users.edit', compact('user'));
+        return view('admin.users.form', compact('user'));
     }
 
     /**
