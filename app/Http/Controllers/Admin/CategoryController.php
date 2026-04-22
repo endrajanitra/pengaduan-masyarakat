@@ -58,7 +58,7 @@ class CategoryController extends Controller
     public function edit(Category $category): View
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
-        return view('admin.categories.edit', compact('category'));
+        return view('admin.categories.form', compact('category'));
     }
 
     /**
