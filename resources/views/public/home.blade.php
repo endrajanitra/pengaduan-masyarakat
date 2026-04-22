@@ -3,74 +3,105 @@
 
 @section('content')
 
-{{-- Hero --}}
-<section class="bg-gradient-to-br from-primary-700 to-primary-900 text-white py-16 px-4">
-    <div class="max-w-4xl mx-auto text-center">
-        <h1 class="text-3xl md:text-4xl font-bold mb-3">Sistem Pengaduan Masyarakat</h1>
-        <p class="text-primary-200 text-lg mb-8">{{ $siteName }} — Sampaikan aspirasi dan keluhan Anda secara mudah, transparan, dan terukur.</p>
-        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+{{-- HERO --}}
+<section class="bg-primary-900 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-24 text-center">
+        <h1 class="text-3xl md:text-5xl font-semibold tracking-tight leading-tight">
+            Sistem Pengaduan Masyarakat
+        </h1>
+
+        <p class="mt-5 text-base md:text-lg text-primary-200 max-w-2xl mx-auto leading-relaxed">
+            {{ $siteName }} menyediakan layanan pengaduan masyarakat yang terintegrasi, transparan, dan dapat dipantau secara real-time.
+        </p>
+
+        <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             @auth
                 <a href="{{ route('warga.complaints.create') }}"
-                    class="bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50 transition text-sm">
-                    Buat Pengaduan Baru
+                   class="px-6 py-3 rounded-lg bg-white text-primary-800 font-medium text-sm hover:bg-gray-100 transition">
+                    Buat Pengaduan
                 </a>
             @else
                 <a href="{{ route('register') }}"
-                    class="bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50 transition text-sm">
-                    Daftar & Buat Pengaduan
+                   class="px-6 py-3 rounded-lg bg-white text-primary-800 font-medium text-sm hover:bg-gray-100 transition">
+                    Daftar Sekarang
                 </a>
             @endauth
+
             <a href="{{ route('public.complaints') }}"
-                class="border border-primary-300 text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-800 transition text-sm">
-                Lihat Pengaduan Publik
+               class="px-6 py-3 rounded-lg border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition">
+                Lihat Pengaduan
             </a>
         </div>
     </div>
 </section>
 
-{{-- Statistik --}}
-<section class="max-w-6xl mx-auto px-4 -mt-8">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+{{-- STATISTICS --}}
+<section class="max-w-6xl mx-auto px-6 -mt-14">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         @php
             $statItems = [
-                ['label' => 'Total Pengaduan',  'value' => $stats['total'],       'color' => 'bg-white border-gray-200',       'text' => 'text-gray-800'],
-                ['label' => 'Selesai',           'value' => $stats['resolved'],    'color' => 'bg-green-50 border-green-200',   'text' => 'text-green-700'],
-                ['label' => 'Sedang Diproses',  'value' => $stats['in_progress'], 'color' => 'bg-orange-50 border-orange-200', 'text' => 'text-orange-700'],
-                ['label' => 'Menunggu Tinjauan','value' => $stats['submitted'],   'color' => 'bg-blue-50 border-blue-200',     'text' => 'text-blue-700'],
+                ['label' => 'Total Pengaduan',  'value' => $stats['total']],
+                ['label' => 'Selesai',          'value' => $stats['resolved']],
+                ['label' => 'Diproses',         'value' => $stats['in_progress']],
+                ['label' => 'Menunggu',         'value' => $stats['submitted']],
             ];
         @endphp
+
         @foreach($statItems as $item)
-            <div class="rounded-xl border {{ $item['color'] }} p-5 shadow-sm text-center">
-                <div class="text-3xl font-bold {{ $item['text'] }}">{{ number_format($item['value']) }}</div>
-                <div class="text-xs text-gray-500 mt-1">{{ $item['label'] }}</div>
+            <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                <div class="text-2xl font-semibold text-gray-900">
+                    {{ number_format($item['value']) }}
+                </div>
+                <div class="text-xs text-gray-500 mt-1">
+                    {{ $item['label'] }}
+                </div>
             </div>
         @endforeach
     </div>
 </section>
 
-{{-- Pengaduan Terbaru --}}
-<section class="max-w-6xl mx-auto px-4 py-12">
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900">Pengaduan Terbaru</h2>
-        <a href="{{ route('public.complaints') }}" class="text-sm text-primary-600 hover:underline">Lihat semua →</a>
+
+{{-- LATEST COMPLAINTS --}}
+<section class="max-w-6xl mx-auto px-6 py-20">
+    <div class="flex items-center justify-between mb-10">
+        <h2 class="text-xl md:text-2xl font-semibold text-gray-900">
+            Pengaduan Terbaru
+        </h2>
+
+        <a href="{{ route('public.complaints') }}"
+           class="text-sm text-gray-500 hover:text-primary-600 transition">
+            Lihat semua
+        </a>
     </div>
 
     @if($latestComplaints->isEmpty())
-        <div class="text-center py-12 text-gray-400">Belum ada pengaduan yang dipublikasikan.</div>
+        <div class="text-center py-20 text-gray-400 text-sm">
+            Belum ada data pengaduan.
+        </div>
     @else
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($latestComplaints as $complaint)
                 <a href="{{ route('public.complaints.show', $complaint->complaint_number) }}"
-                    class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-primary-200 transition block">
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <span class="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                   class="group bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-primary-200 transition">
+
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                             {{ $complaint->category->name ?? '-' }}
                         </span>
+
                         <x-status-badge :status="$complaint->status"/>
                     </div>
-                    <h3 class="font-semibold text-gray-900 text-sm line-clamp-2 mb-2">{{ $complaint->title }}</h3>
-                    <p class="text-xs text-gray-500 line-clamp-2 mb-3">{{ $complaint->description }}</p>
-                    <div class="flex items-center justify-between text-xs text-gray-400">
+
+                    <h3 class="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-primary-700 transition">
+                        {{ $complaint->title }}
+                    </h3>
+
+                    <p class="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
+                        {{ $complaint->description }}
+                    </p>
+
+                    <div class="mt-4 flex items-center justify-between text-xs text-gray-400">
                         <span>{{ $complaint->reporter_name }}</span>
                         <span>{{ $complaint->created_at->diffForHumans() }}</span>
                     </div>
@@ -80,17 +111,30 @@
     @endif
 </section>
 
-{{-- Kategori --}}
-<section class="bg-white border-t border-gray-100 py-12 px-4">
-    <div class="max-w-6xl mx-auto">
-        <h2 class="text-xl font-bold text-gray-900 mb-6 text-center">Kategori Pengaduan</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+{{-- CATEGORIES --}}
+<section class="bg-gray-50 border-t border-gray-100">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+        <h2 class="text-xl md:text-2xl font-semibold text-gray-900 text-center mb-12">
+            Kategori Pengaduan
+        </h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             @foreach($categories as $category)
                 <a href="{{ route('public.complaints', ['category' => $category->id]) }}"
-                    class="border border-gray-200 rounded-xl p-4 text-center hover:border-primary-300 hover:bg-primary-50 transition">
-                    <div class="text-2xl mb-2">📋</div>
-                    <div class="text-sm font-medium text-gray-800">{{ $category->name }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">{{ $category->complaints_count }} pengaduan</div>
+                   class="group relative bg-white border-2 border-gray-200 rounded-2xl p-6 text-center 
+                          hover:border-primary-400 hover:shadow-md transition">
+
+                    <div class="absolute top-0 left-0 w-full h-1 bg-transparent 
+                                group-hover:bg-primary-500 rounded-t-2xl transition"></div>
+
+                    <div class="text-sm md:text-base font-semibold text-gray-800 group-hover:text-primary-700 transition">
+                        {{ $category->name }}
+                    </div>
+
+                    <div class="text-xs text-gray-400 mt-2">
+                        {{ $category->complaints_count }} pengaduan
+                    </div>
                 </a>
             @endforeach
         </div>
