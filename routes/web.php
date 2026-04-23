@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SiteSettingController as AdminSiteSettingController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ====================================================================
@@ -54,25 +56,46 @@ Route::post('/keluar', [AuthController::class, 'logout'])
 // ====================================================================
 
 Route::middleware('auth')->group(function () {
-
+ 
+    // Halaman notice — tampil setelah daftar, minta user cek email
     Route::get('/email/verify', function () {
+        if (auth()->user()->hasVerifiedEmail()) {
+            return redirect()->route('warga.dashboard');
+        }
         return view('auth.verify-email');
     })->name('verification.notice');
-
-    Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+ 
+    // Handler ketika user klik link di email
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
         $request->fulfill();
         // Aktifkan akun setelah email terverifikasi
         $request->user()->update(['is_active' => true]);
+ 
         return redirect()->route('warga.dashboard')
-            ->with('success', 'Email berhasil diverifikasi. Selamat datang!');
+            ->with('success', 'Email berhasil diverifikasi. Selamat datang di Sistem Pengaduan Desa Wangisagara!');
     })->middleware('signed')->name('verification.verify');
-
-    Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
-        $request->user()->sendEmailVerificationNotification();
-        return back()->with('success', 'Link verifikasi telah dikirim ulang ke email Anda.');
+ 
+    // Kirim ulang email verifikasi
+    Route::post('/email/verification-notification', function (Request $request) {
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('warga.dashboard');
+        }
+ 
+        try {
+            $request->user()->sendEmailVerificationNotification();
+            return back()->with('resent', true);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Kirim ulang verifikasi gagal: ' . $e->getMessage());
+            return back()->withErrors([
+                'email' => 'Gagal mengirim email. Pastikan konfigurasi SMTP di .env sudah benar.',
+            ]);
+        }
+ 
     })->middleware('throttle:6,1')->name('verification.send');
-
+ 
 });
+ 
+
 
 // ====================================================================
 // GRUP 4 — WARGA
