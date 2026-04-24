@@ -2,21 +2,31 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Listeners\ActivateUserAfterVerification;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Daftar event beserta listener-nya.
      */
-    public function register(): void
-    {
-        //
-    }
+    protected $listen = [
 
-    /**
-     * Bootstrap any application services.
-     */
+        // Ketika user daftar → kirim email verifikasi
+        Registered::class => [
+            SendEmailVerificationNotification::class,
+        ],
+
+        // Ketika user klik link verifikasi → aktifkan akun
+        Verified::class => [
+            ActivateUserAfterVerification::class,
+        ],
+
+    ];
+
     public function boot(): void
     {
         //

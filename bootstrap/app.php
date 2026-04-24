@@ -16,25 +16,19 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
-        // ── Middleware alias ─────────────────────────────────────────
-        // Dipakai di route: ->middleware('role:admin_desa,super_admin')
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
 
-        // ── Middleware global untuk semua request web ────────────────
-        // Urutan penting: ShareSiteSettings sebelum EnsureUserIsActive
-        // agar data desa tetap tersedia di halaman error/redirect
         $middleware->appendToGroup('web', [
-            ShareSiteSettings::class,   // inject $siteName, $siteLogo, dll ke semua view
-            EnsureUserIsActive::class,  // paksa logout jika akun dinonaktifkan
-            PreventBackHistory::class,  // cegah tombol back browser setelah logout
+            ShareSiteSettings::class,
+            EnsureUserIsActive::class,
+            PreventBackHistory::class,
         ]);
 
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
-        // Halaman 403 — akses ditolak
         $exceptions->render(function (
             \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e,
             \Illuminate\Http\Request $request
@@ -44,7 +38,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 403);
         });
 
-        // Halaman 404 — halaman tidak ditemukan
         $exceptions->render(function (
             \Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e,
             \Illuminate\Http\Request $request
@@ -52,14 +45,11 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->view('errors.404', [], 404);
         });
 
-        // Halaman 422 — data tidak valid / kondisi bisnis tidak terpenuhi
-        $exceptions->render(function (
-            \Symfony\Component\HttpKernel\Exception\HttpException $e,
-            \Illuminate\Http\Request $request
-        ) {
-            if ($e->getStatusCode() === 422) {
-                return back()->withErrors(['error' => $e->getMessage()])->withInput();
-            }
-        });
+    })
 
-    })->create();
+    // Daftarkan AppServiceProvider agar listener Verified aktif
+    ->withProviders([
+        App\Providers\AppServiceProvider::class,
+    ])
+
+    ->create();
