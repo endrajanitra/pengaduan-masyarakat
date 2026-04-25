@@ -148,4 +148,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $query->where('role', $role);
     }
+    
+    public function markEmailAsVerified(): bool
+    {
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+            'is_active'         => true,
+        ])->save();
+    }
 }
