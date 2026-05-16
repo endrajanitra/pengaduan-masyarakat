@@ -12,13 +12,12 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SiteSettingController as AdminSiteSettingController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ====================================================================
 // GRUP 1 — PUBLIK (tanpa login)
-// Halaman yang bisa diakses siapa saja
 // ====================================================================
 
 Route::get('/', [WargaDashboardController::class, 'publicHome'])->name('home');
@@ -32,7 +31,6 @@ Route::get('/pengaduan/{complaintNumber}', [WargaDashboardController::class, 'pu
 
 // ====================================================================
 // GRUP 2 — AUTENTIKASI
-// Hanya bisa diakses jika BELUM login (middleware 'guest')
 // ====================================================================
 
 Route::middleware('guest')->group(function () {
@@ -45,43 +43,77 @@ Route::middleware('guest')->group(function () {
 
 });
 
-// Logout tetap bisa diakses user yang login
 Route::post('/keluar', [AuthController::class, 'logout'])
     ->name('logout')
     ->middleware('auth');
 
 // ====================================================================
 // GRUP 3 — VERIFIKASI EMAIL
-// Laravel built-in email verification routes
 // ====================================================================
 
+// ----------------------------------------------------------------
+// Route ini SENGAJA dipisah dari grup middleware('auth')
+// karena user membuka link dari email — session bisa sudah
+// tidak aktif saat link diklik, menyebabkan route tidak dieksekusi.
+// ----------------------------------------------------------------
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+
+    // 1. Cari user berdasarkan ID
+    $user = User::findOrFail($id);
+
+    // 2. Validasi hash — harus cocok dengan email user
+    if (! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+        abort(403, 'Link verifikasi tidak valid.');
+    }
+
+    // 3. Cek apakah link sudah expired
+    if ($request->has('expires') && now()->timestamp > (int) $request->expires) {
+        auth()->login($user);
+        return redirect()->route('verification.notice')
+            ->with('warning', 'Link verifikasi sudah kadaluarsa. Silakan kirim ulang.');
+    }
+
+    // 4. Jika sudah terverifikasi sebelumnya
+    if ($user->hasVerifiedEmail()) {
+        if (! auth()->check()) {
+            auth()->login($user);
+        }
+        return redirect()->route('warga.dashboard')
+            ->with('success', 'Email sudah terverifikasi sebelumnya.');
+    }
+
+    // 5. Verifikasi + aktifkan akun
+    // markEmailAsVerified() sudah dioverride di model User:
+    // mengisi email_verified_at DAN is_active = true sekaligus
+    $user->markEmailAsVerified();
+
+    // 6. Trigger event Verified
+    event(new \Illuminate\Auth\Events\Verified($user));
+
+    // 7. Login otomatis setelah verifikasi berhasil
+    auth()->login($user);
+
+    return redirect()->route('warga.dashboard')
+        ->with('success', 'Email berhasil diverifikasi. Selamat datang, ' . $user->name . '!');
+
+})->name('verification.verify');
+
+
+// Dua route ini tetap dalam grup auth
 Route::middleware('auth')->group(function () {
- 
-    // Halaman notice setelah daftar
+
     Route::get('/email/verify', function () {
         if (auth()->user()->hasVerifiedEmail()) {
             return redirect()->route('warga.dashboard');
         }
         return view('auth.verify-email');
     })->name('verification.notice');
- 
-    // Handler klik link verifikasi di email
-    // fulfill() otomatis memicu event Verified
-    // → listener ActivateUserAfterVerification menangkap event ini
-    // → is_active diset true di sana
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $request->fulfill(); // ← event Verified dijalankan di sini
- 
-        return redirect()->route('warga.dashboard')
-            ->with('success', 'Email berhasil diverifikasi. Selamat datang!');
-    })->middleware('signed')->name('verification.verify');
- 
-    // Kirim ulang email verifikasi
+
     Route::post('/email/verification-notification', function (Request $request) {
         if ($request->user()->hasVerifiedEmail()) {
             return redirect()->route('warga.dashboard');
         }
- 
+
         try {
             $request->user()->sendEmailVerificationNotification();
             return back()->with('resent', true);
@@ -91,17 +123,13 @@ Route::middleware('auth')->group(function () {
                 'email' => 'Gagal mengirim email. Pastikan konfigurasi SMTP di .env sudah benar.',
             ]);
         }
- 
-    })->middleware('throttle:6,1')->name('verification.send');
- 
-});
- 
- 
 
+    })->middleware('throttle:6,1')->name('verification.send');
+
+});
 
 // ====================================================================
 // GRUP 4 — WARGA
-// Harus login + email terverifikasi + role warga
 // ====================================================================
 
 Route::middleware(['auth', 'verified', 'role:warga'])
@@ -109,11 +137,9 @@ Route::middleware(['auth', 'verified', 'role:warga'])
     ->name('warga.')
     ->group(function () {
 
-        // Dashboard warga
         Route::get('/dashboard', [WargaDashboardController::class, 'dashboard'])
             ->name('dashboard');
 
-        // ── Pengaduan ────────────────────────────────────────────────
         Route::prefix('pengaduan')->name('complaints.')->group(function () {
 
             Route::get('/', [WargaComplaintController::class, 'index'])
@@ -137,13 +163,11 @@ Route::middleware(['auth', 'verified', 'role:warga'])
             Route::delete('/{complaint}', [WargaComplaintController::class, 'destroy'])
                 ->name('destroy');
 
-            // Rating — hanya POST setelah pengaduan resolved
             Route::post('/{complaint}/rating', [WargaRatingController::class, 'store'])
                 ->name('rating.store');
 
         });
 
-        // ── Notifikasi ───────────────────────────────────────────────
         Route::prefix('notifikasi')->name('notifications.')->group(function () {
 
             Route::get('/', [WargaNotificationController::class, 'index'])
@@ -152,11 +176,9 @@ Route::middleware(['auth', 'verified', 'role:warga'])
             Route::post('/tandai-semua', [WargaNotificationController::class, 'markAllRead'])
                 ->name('mark-all-read');
 
-            // AJAX endpoint — tandai satu notifikasi sudah dibaca
             Route::patch('/{notification}/baca', [WargaNotificationController::class, 'markRead'])
                 ->name('mark-read');
 
-            // AJAX endpoint — ambil jumlah notifikasi belum dibaca (untuk badge navbar)
             Route::get('/jumlah-belum-dibaca', [WargaNotificationController::class, 'unreadCount'])
                 ->name('unread-count');
 
@@ -165,8 +187,7 @@ Route::middleware(['auth', 'verified', 'role:warga'])
     });
 
 // ====================================================================
-// GRUP 5 — ADMIN (semua staf desa)
-// Harus login + verified + role: admin_desa, kepala_desa, atau super_admin
+// GRUP 5 — ADMIN
 // ====================================================================
 
 Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'])
@@ -174,11 +195,9 @@ Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'
     ->name('admin.')
     ->group(function () {
 
-        // Dashboard admin
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // ── Pengaduan (admin) ────────────────────────────────────────
         Route::prefix('pengaduan')->name('complaints.')->group(function () {
 
             Route::get('/', [AdminComplaintController::class, 'index'])
@@ -187,23 +206,18 @@ Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'
             Route::get('/{complaint}', [AdminComplaintController::class, 'show'])
                 ->name('show');
 
-            // Ubah status pengaduan (in_review, in_progress, dll)
             Route::patch('/{complaint}/status', [AdminComplaintController::class, 'updateStatus'])
                 ->name('update-status');
 
-            // Ubah prioritas pengaduan
             Route::patch('/{complaint}/prioritas', [AdminComplaintController::class, 'updatePriority'])
                 ->name('update-priority');
 
-            // Selesaikan pengaduan (tulis balasan resmi + resolved)
             Route::post('/{complaint}/selesaikan', [AdminComplaintController::class, 'resolve'])
                 ->name('resolve');
 
-            // Tolak pengaduan (tulis alasan + rejected)
             Route::post('/{complaint}/tolak', [AdminComplaintController::class, 'reject'])
                 ->name('reject');
 
-            // ── Komentar pada pengaduan ──────────────────────────────
             Route::prefix('/{complaint}/komentar')->name('comments.')->group(function () {
 
                 Route::post('/', [AdminCommentController::class, 'store'])
@@ -216,18 +230,15 @@ Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'
 
         });
 
-        // ── Laporan & Statistik (kepala_desa + super_admin) ──────────
         Route::get('/laporan', [AdminReportController::class, 'index'])
             ->name('reports.index')
             ->middleware('role:kepala_desa,super_admin');
 
-        // ── Kategori ─────────────────────────────────────────────────
         Route::prefix('kategori')->name('categories.')->group(function () {
 
             Route::get('/', [AdminCategoryController::class, 'index'])
                 ->name('index');
 
-            // Hanya super_admin bisa tambah/edit/toggle kategori
             Route::middleware('role:super_admin')->group(function () {
 
                 Route::get('/buat', [AdminCategoryController::class, 'create'])
@@ -249,7 +260,6 @@ Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'
 
         });
 
-        // ── Manajemen Pengguna (super_admin only) ────────────────────
         Route::middleware('role:super_admin')
             ->prefix('pengguna')
             ->name('users.')
@@ -278,7 +288,6 @@ Route::middleware(['auth', 'verified', 'role:admin_desa,kepala_desa,super_admin'
 
             });
 
-        // ── Pengaturan Situs (super_admin only) ──────────────────────
         Route::middleware('role:super_admin')
             ->prefix('pengaturan')
             ->name('settings.')
