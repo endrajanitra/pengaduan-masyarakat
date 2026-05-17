@@ -16,19 +16,19 @@
             <option value="kepala_desa" {{ request('role')=='kepala_desa' ? 'selected':'' }}>Kepala Desa</option>
             <option value="super_admin" {{ request('role')=='super_admin' ? 'selected':'' }}>Super Admin</option>
         </select>
-        <button type="submit" class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition">Cari</button>
+        <button type="submit" class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-sm">Cari</button>
         @if(request()->hasAny(['search','role']))
             <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-400 hover:text-gray-600 py-2">Reset</a>
         @endif
     </form>
     <a href="{{ route('admin.users.create') }}"
-        class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-1.5">
+        class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-sm flex items-center gap-1.5">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Tambah Staf
     </a>
 </div>
 
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+<div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">

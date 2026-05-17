@@ -13,7 +13,7 @@
 @endphp
 
 <a href="{{ route($route) }}"
-   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ $isActive ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+   class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium {{ $isActive ? 'active' : 'text-gray-400' }}">
     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         {!! $icons[$icon] ?? $icons['document-text'] !!}
     </svg>

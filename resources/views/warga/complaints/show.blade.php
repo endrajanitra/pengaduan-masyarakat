@@ -130,7 +130,7 @@
                     </div>
                     <textarea name="feedback" rows="2" placeholder="Komentar tambahan (opsional)..."
                         class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
-                    <button type="submit" class="w-full bg-primary-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-primary-700 transition">
+                    <button type="submit" class="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-sm">
                         Kirim Penilaian
                     </button>
                 </form>

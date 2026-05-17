@@ -10,7 +10,7 @@
             <p class="text-sm text-gray-500 mt-1">Semua pengaduan yang pernah Anda kirimkan.</p>
         </div>
         <a href="{{ route('warga.complaints.create') }}"
-            class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-1.5">
+            class="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-sm flex items-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Buat Baru
         </a>
@@ -40,7 +40,7 @@
     @else
         <div class="space-y-3">
             @foreach($complaints as $complaint)
-                <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm hover:border-primary-200 transition">
+                <div class="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-sm hover:border-primary-200 transition">
                     <div class="flex items-start gap-4">
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 mb-1.5">

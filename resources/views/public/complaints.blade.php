@@ -52,7 +52,7 @@
         <div class="space-y-3">
             @foreach($complaints as $complaint)
                 <a href="{{ route('public.complaints.show', $complaint->complaint_number) }}"
-                    class="bg-white rounded-xl border border-gray-200 p-5 flex gap-4 hover:shadow-sm hover:border-primary-200 transition block">
+                    class="bg-white rounded-2xl border border-gray-200 p-5 flex gap-4 hover:shadow-sm hover:border-primary-200 transition block">
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1.5">
                             <x-status-badge :status="$complaint->status"/>
